@@ -24,15 +24,17 @@ pid_t adress;
 long int getTime()
 {
 	struct timeval time;
-	gettimeofday(&time,NULL);
-	return time.tv_sec*1000+time.tv_usec/1000;
+	if (gettimeofday(&time, NULL) == -1)
+		perror("Can not get current time\n");
+	else {
+		return time.tv_sec * 1000 + time.tv_usec / 1000;
+	}
 }
 
 void sigUsr1(int sig,siginfo_t *info,void *context){
 
 	if(sig!=SIGUSR1){
-			 return;
-		}
+			return;}
 		else{
 			GET++;
 			 if(GET<101){
@@ -40,13 +42,17 @@ void sigUsr1(int sig,siginfo_t *info,void *context){
 				 printf(FORMAT,N,getpid(),getppid(),"put","SIGUSR2",getTime());
 				 Y=Y+4;
 				 usleep(SLEEPTIME);
-				 kill(adress,SIGUSR2);
+				 if (kill(adress, SIGUSR2) == -1)
+					 perror("Can not send signal\n");
 			 }
 			 else{
 			 	int status;
 			 	usleep(SLEEPTIME*2);
-			 	kill(adress,SIGTERM);
-			 	for(int i=0;i<7;i++)
+
+				if (kill(adress, SIGTERM) == -1)
+					perror("Can not send signal\n");
+
+				for(int i=0;i<7;i++)
 			 	wait(&status);
 			 	
 			 	printf(EX,N,getpid(),getppid(),X,Y);
@@ -63,7 +69,9 @@ void sigUsr234(int sig,siginfo_t *info,void *context)
 {
 	if(sig==SIGTERM){
 	int status;
-		kill(adress,SIGTERM);
+		
+		if (kill(adress, SIGTERM) == -1)
+		perror("Can not send signal\n");
 		waitpid(adress,&status,0);
 		printf(EX,N,getpid(),getppid(),X,Y);
 		exit(0);
@@ -77,7 +85,8 @@ void sigUsr234(int sig,siginfo_t *info,void *context)
 				printf(FORMAT,N,getpid(),getppid(),"put","SIGUSR1",getTime());
 				X++;
 				usleep(SLEEPTIME);
-				kill(adress,SIGUSR1);
+				if (kill(adress, SIGUSR1) == -1)
+					perror("Can not send signal\n");
 			}
 }
 
@@ -127,7 +136,8 @@ void sigUsr8(int sig,siginfo_t *info,void *context)
 			 	printf(FORMAT,N,getpid(),getppid(),"put","SIGUSR1",getTime());
 			 	X++;
 			 	usleep(SLEEPTIME);
-			 	kill(adress,SIGUSR1);
+				if (kill(adress, SIGUSR1) == -1)
+					perror("Can not send signal\n");
 			 }
 }
 
@@ -143,7 +153,8 @@ pid_t p;
 struct sigaction act={0};
 
 p=fork();
-if(p==0){ 
+if(p==0){
+	//перевода текущего процесса во вновь создаваемую группу процессов, идентификатор которой будет совпадать с идентификатором текущего процесса
 	setpgid(getpid(),getpid());
 	p=fork();
 	if(p>0){
@@ -157,13 +168,27 @@ if(p==0){
 					N=1;
 					act.sa_flags=SA_SIGINFO;
 					act.sa_sigaction=&sigUsr1;
-					sigaction(SIGUSR1,&act,NULL);
-					sigaction(SIGUSR2,&act,NULL);
-					sigaction(SIGTERM,&act,NULL);
+
+					if (sigaction(SIGUSR1, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
+
+					if (sigaction(SIGUSR2, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
+
+					if (sigaction(SIGTERM, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
 					
 					usleep(SLEEPTIME*1000);
 					Y=Y+4;
-					kill(adress,SIGUSR2);
+					
+					if (kill(adress, SIGUSR2) == -1)
+						perror("Can not send signal\n");
 					
 					
 					
@@ -172,12 +197,27 @@ if(p==0){
 					N=5;
 					act.sa_flags=SA_SIGINFO;
 					act.sa_sigaction=&sigUsr5;
-					sigaction(SIGUSR1,&act,NULL);
-					sigaction(SIGUSR2,&act,NULL);
-					sigaction(SIGTERM,&act,NULL);
+					
+					if (sigaction(SIGUSR1, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
+
+					if (sigaction(SIGUSR2, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
+
+					if (sigaction(SIGTERM, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
 					
 				}//~CHILD5
-			
+				else if (p == -1) {
+					perror("Error: can not create  process");
+					exit(-1);
+				}
 			
 			}
 			else if(p==0){
@@ -187,9 +227,21 @@ if(p==0){
 					N=4;
 					act.sa_flags=SA_SIGINFO;
 					act.sa_sigaction=&sigUsr234;
-					sigaction(SIGUSR1,&act,NULL);
-					sigaction(SIGUSR2,&act,NULL);
-					sigaction(SIGTERM,&act,NULL);
+					
+					if (sigaction(SIGUSR1, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
+
+					if (sigaction(SIGUSR2, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
+
+					if (sigaction(SIGTERM, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
 					
 				
 				}//~CHILD4
@@ -199,12 +251,32 @@ if(p==0){
 					N=8;
 					act.sa_flags=SA_SIGINFO;
 					act.sa_sigaction=&sigUsr8;
-					sigaction(SIGUSR1,&act,NULL);
-					sigaction(SIGUSR2,&act,NULL);
-					sigaction(SIGTERM,&act,NULL);
+					
+					if (sigaction(SIGUSR1, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
+
+					if (sigaction(SIGUSR2, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
+
+					if (sigaction(SIGTERM, &act, NULL) == -1) {
+						perror("Error: can not set signal handler");
+						exit(-1);
+					}
 					
 					
 				}//~CHILD8
+				else if (p == -1) {
+					perror("Error: can not create  process");
+					exit(-1);
+				}
+}
+			else if (p == -1) {
+			perror("Error: can not create  process");
+			exit(-1);
 			}
 		}
 		else if(p==0){ 
@@ -214,9 +286,21 @@ if(p==0){
 				N=3;
 				act.sa_flags=SA_SIGINFO;
 				act.sa_sigaction=&sigUsr234;
-				sigaction(SIGUSR1,&act,NULL);
-				sigaction(SIGUSR2,&act,NULL);
-				sigaction(SIGTERM,&act,NULL);
+				
+				if (sigaction(SIGUSR1, &act, NULL) == -1) {
+					perror("Error: can not set signal handler");
+					exit(-1);
+				}
+
+				if (sigaction(SIGUSR2, &act, NULL) == -1) {
+					perror("Error: can not set signal handler");
+					exit(-1);
+				}
+
+				if (sigaction(SIGTERM, &act, NULL) == -1) {
+					perror("Error: can not set signal handler");
+					exit(-1);
+				}
 				
 			
 			}//~CHILD3
@@ -226,14 +310,33 @@ if(p==0){
 				N=7;
 				act.sa_flags=SA_SIGINFO;
 				act.sa_sigaction=&sigUsr67;
-				sigaction(SIGUSR1,&act,NULL);
-				sigaction(SIGUSR2,&act,NULL);
-				sigaction(SIGTERM,&act,NULL);
+				
+				if (sigaction(SIGUSR1, &act, NULL) == -1) {
+					perror("Error: can not set signal handler");
+					exit(-1);
+				}
+
+				if (sigaction(SIGUSR2, &act, NULL) == -1) {
+					perror("Error: can not set signal handler");
+					exit(-1);
+				}
+
+				if (sigaction(SIGTERM, &act, NULL) == -1) {
+					perror("Error: can not set signal handler");
+					exit(-1);
+				}
 				
 				
 			}//~CHILD7
-
-		} 
+			else if (p == -1) {
+				perror("Error: can not create  process");
+				exit(-1);
+			}
+		}
+		else if (p == -1) {
+		perror("Error: can not create  process");
+		exit(-1);
+		}
 	}
 	else if(p==0){ 
 		p=fork();
@@ -242,9 +345,21 @@ if(p==0){
 			N=2;
 			act.sa_flags=SA_SIGINFO;
 			act.sa_sigaction=&sigUsr234;
-			sigaction(SIGUSR1,&act,NULL);
-			sigaction(SIGUSR2,&act,NULL);
-			sigaction(SIGTERM,&act,NULL);
+			
+			if (sigaction(SIGUSR1, &act, NULL) == -1) {
+				perror("Error: can not set signal handler");
+				exit(-1);
+			}
+
+			if (sigaction(SIGUSR2, &act, NULL) == -1) {
+				perror("Error: can not set signal handler");
+				exit(-1);
+			}
+
+			if (sigaction(SIGTERM, &act, NULL) == -1) {
+				perror("Error: can not set signal handler");
+				exit(-1);
+			}
 			
 		
 		}//~CHILD2
@@ -254,21 +369,50 @@ if(p==0){
 			N=6;
 			act.sa_flags=SA_SIGINFO;
 			act.sa_sigaction=&sigUsr67;
-			sigaction(SIGUSR1,&act,NULL);
-			sigaction(SIGUSR2,&act,NULL);
-			sigaction(SIGTERM,&act,NULL);
+			
+			if (sigaction(SIGUSR1, &act, NULL) == -1) {
+				perror("Error: can not set signal handler");
+				exit(-1);
+			}
+
+			if (sigaction(SIGUSR2, &act, NULL) == -1) {
+				perror("Error: can not set signal handler");
+				exit(-1);
+			}
+
+			if (sigaction(SIGTERM, &act, NULL) == -1) {
+				perror("Error: can not set signal handler");
+				exit(-1);
+			}
+
 		}//~CHILD6
 
-	} 
+	}
+	else if (p == -1) {
+	perror("Error: can not create  process");
+	exit(-1);
+	}
 
 	
 }
 else if(p>0){//PARENT0
 	act.sa_flags=SA_SIGINFO;
 	act.sa_sigaction=&sigfunc1;
-	sigaction(SIGUSR1,&act,NULL);
-	sigaction(SIGUSR2,&act,NULL);
-	sigaction(SIGTERM,&act,NULL);
+	
+	if (sigaction(SIGUSR1, &act, NULL) == -1) {
+		perror("Error: can not set signal handler");
+		exit(-1);
+	}
+
+	if (sigaction(SIGUSR2, &act, NULL) == -1) {
+		perror("Error: can not set signal handler");
+		exit(-1);
+	}
+
+	if (sigaction(SIGTERM, &act, NULL) == -1) {
+		perror("Error: can not set signal handler");
+		exit(-1);
+	}
 	
 	int status;
 	waitpid(p,&status,0);
@@ -277,7 +421,11 @@ else if(p>0){//PARENT0
 	
 	
 	
-}//~PARENT0
+}else if(p == -1){
+perror("Error: can not create  process");
+exit(-1);
+}
+//~PARENT0
 
 int i=0;
 while(1){i++;}
